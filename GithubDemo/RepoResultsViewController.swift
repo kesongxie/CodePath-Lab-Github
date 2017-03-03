@@ -10,6 +10,8 @@ import UIKit
 import MBProgressHUD
 
 fileprivate let reuseIden = "RepoCell"
+fileprivate let PresentSettingsSegueIden = "PresentSettingsSegue"
+
 // Main ViewController
 class RepoResultsViewController: UIViewController {
 
@@ -24,6 +26,8 @@ class RepoResultsViewController: UIViewController {
         }
     }
     @IBOutlet weak var tableView: UITableView!
+    
+    var isSearching: Bool = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,32 +38,53 @@ class RepoResultsViewController: UIViewController {
         self.tableView.rowHeight = UITableViewAutomaticDimension
         
         // Initialize the UISearchBar
-        searchBar = UISearchBar()
-        searchBar.delegate = self
+        self.searchBar = UISearchBar()
+        self.searchBar.delegate = self
+        self.searchBar.enablesReturnKeyAutomatically = false
+
 
         // Add SearchBar to the NavigationBar
         searchBar.sizeToFit()
-        navigationItem.titleView = searchBar
+        self.navigationItem.titleView = self.searchBar
 
         // Perform the first search when the view controller first loads
-        doSearch()
+        self.doSearch()
     }
 
     // Perform the search.
     fileprivate func doSearch() {
-
-        MBProgressHUD.showAdded(to: self.view, animated: true)
-
-        // Perform request to GitHub API to get the list of repositories
-        GithubRepo.fetchRepos(searchSettings, successCallback: { (newRepos) -> Void in
-            self.repos = newRepos
-            MBProgressHUD.hide(for: self.view, animated: true)
-            }, error: { (error) -> Void in
-                if error != nil{
-                    print(error!.localizedDescription)
-                }
-        })
+        if !self.isSearching{
+            MBProgressHUD.showAdded(to: self.view, animated: true)
+            // Perform request to GitHub API to get the list of repositories
+            self.isSearching = true
+            GithubRepo.fetchRepos(self.searchSettings, successCallback: { (newRepos) -> Void in
+                self.repos = newRepos
+                self.isSearching = false
+                MBProgressHUD.hide(for: self.view, animated: true)
+                }, error: { (error) -> Void in
+                    if error != nil{
+                        print(error!.localizedDescription)
+                    }
+            })
+        }
     }
+
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let iden = segue.identifier, iden == PresentSettingsSegueIden{
+            if let nvc = segue.destination as? UINavigationController{
+                if let searchSettingsTVC = nvc.viewControllers.first as? SearchSettingsTableViewController{
+                    searchSettingsTVC.delegate = self
+                    searchSettingsTVC.searchSettings = self.searchSettings
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
 }
 
 // SearchBar methods
@@ -78,12 +103,20 @@ extension RepoResultsViewController: UISearchBarDelegate {
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.text = ""
         searchBar.resignFirstResponder()
+        self.doSearch()
+
     }
 
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchSettings.searchString = searchBar.text
+        self.searchSettings.searchString = searchBar.text
         searchBar.resignFirstResponder()
-        doSearch()
+        self.doSearch()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        self.searchSettings.searchString = searchBar.text
+        self.doSearch()
+
     }
 }
 
@@ -103,5 +136,18 @@ extension RepoResultsViewController: UITableViewDelegate, UITableViewDataSource{
         cell.repo = self.repos![indexPath.row]
         return cell
     }
+}
+
+
+extension RepoResultsViewController: SearchSettingsTableViewControllerDelegate{
+    func didSaveSettings(settings: GithubRepoSearchSettings) {
+        self.searchSettings = settings
+        //update the search
+        self.doSearch()
+    }
     
+    func didCancelSettings() {
+        print("cancel")
+    }
+  
 }

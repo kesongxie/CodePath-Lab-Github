@@ -62,6 +62,7 @@ class GithubRepo: CustomStringConvertible {
         manager.get(reposUrl, parameters: params, success: { (operation: AFHTTPRequestOperation, responseObject: Any) in
             if let response = responseObject as? NSDictionary, let results = response["items"] as? NSArray {
                 var repos: [GithubRepo] = []
+                
                 for result in results as! [NSDictionary] {
                     repos.append(GithubRepo(jsonResult: result))
                 }
@@ -87,12 +88,20 @@ class GithubRepo: CustomStringConvertible {
         }
         
         var q = ""
-        if let searchString = settings.searchString {
-            q = q + searchString
+        if let searchText = settings.searchString{
+            q += "\(searchText) in:name"
         }
+
         q = q + " stars:>\(settings.minStars)"
-        params["q"] = q
         
+        for lan in settings.lanFilter.filter{
+            if lan.isOn{
+                q = q + " language:\(lan.name)"
+            }
+        }
+        print(q)
+       
+        params["q"] = q
         params["sort"] = "stars"
         params["order"] = "desc"
         

@@ -22,12 +22,13 @@ class RepoTableViewCell: UITableViewCell {
     
     @IBOutlet weak var authorLabel: UILabel!
     
-    @IBOutlet weak var startCountBtn: UIButton!
+    @IBOutlet weak var starCountBtn: UIButton!
     
     @IBOutlet weak var forkCountBtn: UIButton!
     
     var repo: GithubRepo!{
         didSet{
+            self.avatorImageView.image = nil
             if let urlString = self.repo.ownerAvatarURL, let url = URL(string: urlString){
                 self.avatorImageView.setImageWith(url)
             }
@@ -37,13 +38,11 @@ class RepoTableViewCell: UITableViewCell {
             }
             self.repoDescriptionLabel.text = self.repo.repoDescription
             if let startCount = self.repo.stars{
-                self.startCountBtn.setTitle(String(startCount), for: .normal)
+                self.starCountBtn.setTitle(String(startCount), for: .normal)
             }
             if let forkCount = self.repo.forks{
-                self.startCountBtn.setTitle(String(forkCount), for: .normal)
+                self.forkCountBtn.setTitle(String(forkCount), for: .normal)
             }
-            
-
         }
     }
     
