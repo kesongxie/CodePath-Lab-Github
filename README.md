@@ -2,7 +2,7 @@
 
 **Github**
 
-Time spent: **1.0** hour spent in total
+Time spent: **3.0** hour spent in total
 
 
 The following **required** functionality is completed:
